@@ -8,6 +8,7 @@
 - Runtime: Python 3.12
 - Hosting: Streamlit Community Cloud
 - Intended hosted data: synthetic or fully anonymized demonstrations only
+- Live application: <https://walawala254-payouts-transaction-monitoring-engine-mv-app-duyz9q.streamlit.app>
 
 ## Pre-deployment controls
 
@@ -44,7 +45,7 @@ The repository `.gitignore` excludes local databases, credentials, uploads, expo
 5. Do not add production credentials or monitoring data.
 6. Deploy and verify the health, bundled synthetic run, Alert Queue, and report download.
 
-Suggested custom subdomain: `payouts-tm-engine-mvp` if available.
+Current Streamlit URL: <https://walawala254-payouts-transaction-monitoring-engine-mv-app-duyz9q.streamlit.app>
 
 GitHub is the deployment source. A push to `main` causes Community Cloud to update the application; dependency changes can trigger a full rebuild.
 
