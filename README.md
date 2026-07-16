@@ -1,6 +1,7 @@
 # Payouts Transaction Monitoring Engine MVP
 
 [![CI](https://github.com/walawala254/payouts-transaction-monitoring-engine-mvp/actions/workflows/ci.yml/badge.svg)](https://github.com/walawala254/payouts-transaction-monitoring-engine-mvp/actions/workflows/ci.yml)
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://walawala254-payouts-transaction-monitoring-engine-mv-app-duyz9q.streamlit.app)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/built%20with-Streamlit-ff4b4b.svg)](https://streamlit.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -10,6 +11,12 @@ A file-based Streamlit transaction-monitoring workbench for PSP and acquiring de
 > **Public demo boundary:** use synthetic or fully anonymized data only. Do not upload or commit live cardholder data, personal data, production transaction history, operational watchlists, credentials, or confidential monitoring thresholds.
 
 This project is an early-stage analyst-support MVP. A rule match is an indicator for review, not proof of fraud, money laundering, or a policy breach. The project does not claim Visa certification or formal regulatory compliance.
+
+## Live synthetic demo
+
+[Launch the Payouts Transaction Monitoring Engine MVP](https://walawala254-payouts-transaction-monitoring-engine-mv-app-duyz9q.streamlit.app)
+
+Select **Load bundled synthetic demo** to evaluate the included example transactions without uploading a file. The hosted application is public and must only be used with synthetic or fully anonymized data.
 
 ## Capabilities
 
