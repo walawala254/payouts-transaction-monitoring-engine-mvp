@@ -1,0 +1,41 @@
+# Python caches and virtual environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+private/
+
+# Transaction history, uploads, and generated exports
+*.db
+*.sqlite
+*.sqlite3
+uploads/
+exports/
+data/private/
+*.csv
+*.xls
+*.xlsx
+!sample_data/*.csv
+
+# Generated personal-consumption documents
+documentation_pdfs/
+
+# Legacy duplicate application retained locally only
+payouts_tm_mvp/
+
+# Editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

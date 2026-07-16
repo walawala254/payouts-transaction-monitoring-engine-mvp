@@ -1,0 +1,552 @@
+# Payouts Transaction Monitoring Workbench - default configuration
+# Scope: Transaction Monitoring first. No CRM.
+# Public demo profile: all entity names and thresholds are synthetic examples.
+# Do not treat these values as production risk policy.
+
+configuration_metadata:
+  profile: PUBLIC_DEMO
+  synthetic: true
+  production_use: false
+  notice: Example thresholds require calibration and formal approval before operational use.
+
+global:
+  monitoring_window_hours: 24
+  card_approved_count_limit: 7
+  card_declined_count_limit: 3
+  repeated_amount_window_minutes: 10
+  email_multiple_card_limit: 2
+  phone_multiple_card_limit: 2
+  min_transaction_amount: 50
+  cross_merchant_card_limit: 3
+  decline_then_approval_limit: 2
+  merchant_volume_baseline_multiplier: 3.5
+  approval_rate_drop_points: 0.30
+  refund_rate_baseline_multiplier: 3.0
+  baseline_min_daily_transactions: 10
+  dormant_mid_days: 30
+  high_risk_countries: []
+  success_statuses: [success, approved, captured, settled]
+  decline_statuses: [fail, failed, declined, rejected]
+
+plans:
+  STANDARD:
+    min_amount: 50
+    max_amount: 5000
+    daily_merchant_volume: 25000
+    card_approved_count_limit: 7
+    card_declined_count_limit: 3
+  FOREX:
+    min_amount: 10
+    max_amount: 5000
+    daily_merchant_volume: 25000
+    card_approved_count_limit: 7
+    card_declined_count_limit: 3
+  GAMING:
+    min_amount: 10
+    max_amount: 2000
+    daily_merchant_volume: 14000
+    card_approved_count_limit: 7
+    card_declined_count_limit: 3
+  HIGH_RISK:
+    min_amount: 10
+    max_amount: 3000
+    daily_merchant_volume: 10000
+    card_approved_count_limit: 5
+    card_declined_count_limit: 2
+  VIP:
+    min_amount: 50
+    max_amount: 10000
+    daily_merchant_volume: 50000
+    card_approved_count_limit: 12
+    card_declined_count_limit: 5
+
+merchant_plan_map: {}
+mid_plan_map: {}
+merchant_overrides: {}
+mid_overrides: {}
+temporary_overrides: []
+
+baseline_settings:
+  method: trailing_average
+  lookback_days: 30
+  minimum_history_days: 7
+  label: Deterministic statistical baseline; not machine learning
+
+merchant_rules: {}
+
+mid_rules:
+  DEMO_FOREX_PRIMARY:
+    brand_rules:
+      visa:
+        successful_limit: 5
+        successful_window_hours: 168
+        failed_limit: 4
+        failed_window_hours: 24
+        daily_volume_limit: 75000
+      mastercard:
+        successful_limit: 5
+        successful_window_hours: 168
+        failed_limit: 4
+        failed_window_hours: 24
+        daily_volume_limit: 65000
+    actual_value:
+      min: 100
+      max: 5000
+    merchant_value:
+      min: 20
+      max: 1000
+  DEMO_FOREX_VISA:
+    brand_rules:
+      visa:
+        successful_limit: 2
+        successful_window_hours: 24
+        failed_limit: 2
+        failed_window_hours: 24
+        daily_volume_limit: 25000
+    actual_value:
+      min: 15
+      max: 1000
+    merchant_value:
+      min: 20
+      max: 1000
+  DEMO_FOREX_MASTERCARD:
+    brand_rules:
+      mastercard:
+        successful_limit: 3
+        successful_window_hours: 24
+        failed_limit: 3
+        failed_window_hours: 24
+        daily_volume_limit: 15000
+    actual_value:
+      min: 10
+      max: 1000
+    merchant_value:
+      min: 20
+      max: 1000
+  DEMO_FOREX_SECONDARY_MC:
+    brand_rules:
+      mastercard:
+        successful_limit: 3
+        successful_window_hours: 24
+        failed_limit: 3
+        failed_window_hours: 24
+        daily_volume_limit: 15000
+    actual_value:
+      min: 10
+      max: 1000
+    merchant_value:
+      min: 20
+      max: 1000
+  DEMO_GAMING_VIP:
+    brand_rules:
+      visa:
+        successful_limit: 2
+        successful_window_hours: 24
+        failed_limit: 2
+        failed_window_hours: 24
+        daily_volume_limit: 25000
+      mastercard:
+        successful_limit: 3
+        successful_window_hours: 24
+        failed_limit: 3
+        failed_window_hours: 24
+        daily_volume_limit: 25000
+    actual_value:
+      min: 15
+      max: 1000
+    merchant_value:
+      min: 20
+      max: 1000
+
+watchlists:
+  emails: []
+  cards: []
+  phones: []
+  bins: []
+
+preventive_control_catalog:
+  - code: HIGH_AMOUNT_ABOVE_PLAN_LIMIT
+    name: Transaction above configured acceptance limit
+    classification: Preventive Control
+    purpose: Enforce the maximum transaction value configured for a plan, merchant or MID.
+    execution: preventive_control_layer
+    investigation_context: true
+    reason_removed_from_tm: A transaction acceptance limit is a pre-completion control, not independently suspicious activity.
+  - code: LOW_AMOUNT_BELOW_MINIMUM
+    name: Transaction below configured acceptance minimum
+    classification: Preventive Control
+    purpose: Enforce the minimum transaction value configured for a plan, merchant or MID.
+    execution: preventive_control_layer
+    investigation_context: true
+    reason_removed_from_tm: A configured minimum is a processing control and can otherwise create routine false-positive TM alerts.
+  - code: MERCHANT_VALUE_ABOVE_LIMIT
+    name: Merchant settlement value above configured limit
+    classification: Preventive Control
+    purpose: Enforce the maximum merchant-facing or settlement value.
+    execution: preventive_control_layer
+    investigation_context: true
+    reason_removed_from_tm: Settlement limit enforcement belongs outside suspicious-activity alerting.
+  - code: MERCHANT_VALUE_BELOW_MINIMUM
+    name: Merchant settlement value below configured minimum
+    classification: Preventive Control
+    purpose: Enforce the minimum merchant-facing or settlement value.
+    execution: preventive_control_layer
+    investigation_context: true
+    reason_removed_from_tm: Settlement configuration validation is not independently suspicious activity.
+
+future_data_requirements:
+  - field: customer_id
+    required_for: Stable customer baselines and customer-level cross-merchant monitoring
+  - field: device_id_or_fingerprint
+    required_for: Device velocity, device reuse and device-country anomalies
+  - field: source_ip_address
+    required_for: IP velocity, network linkage and proxy intelligence
+  - field: original_transaction_id
+    required_for: Refund and reversal linkage
+  - field: chargeback_status_reason_date
+    required_for: Chargeback exposure and rule-risk correlation
+  - field: merchant_mcc_and_activation_date
+    required_for: Industry inheritance, laundering indicators and reliable dormancy monitoring
+  - field: analyst_disposition
+    required_for: Measured false-positive rates and threshold optimization
+
+rule_defaults: &rule_defaults
+  code: ""
+  name: ""
+  category: Fraud and AML monitoring
+  family: Uncategorised
+  group: Uncategorised
+  classification: Monitoring Rule
+  purpose: ""
+  risk_scenario_detected: ""
+  applicable_entity: Transaction
+  required_data_fields: []
+  data_quality_dependencies: Required fields must be present, normalized and internally consistent.
+  eligibility_conditions: Required fields are populated and the transaction falls within the configured scope.
+  exclusions: Missing required identifiers; approved test traffic; documented merchant exceptions.
+  baseline_method: Static threshold
+  threshold_logic: Configuration-driven
+  time_window: Uploaded evaluation period
+  aggregation_key: transaction_id
+  risk_weight: 25
+  severity: Medium
+  applicable_antifraud_plans: [STANDARD, FOREX, GAMING, HIGH_RISK, VIP]
+  merchant_applicability: All merchants unless excluded or overridden
+  mid_applicability: All MIDs unless excluded or overridden
+  override_behavior: Global -> plan -> merchant -> MID -> valid temporary override; most specific setting wins.
+  alert_message: Monitoring scenario detected.
+  evidence_returned: Triggering transactions, observed value, threshold, scope and linked identifiers.
+  recommended_analyst_action: Review the supporting evidence and linked activity before disposition.
+  false_positive_risks: Legitimate customer or merchant behaviour may exceed a generic threshold.
+  false_positive_controls: Plan-specific thresholds, entity overrides, eligibility checks, exclusions and simulation.
+  rule_dependencies: []
+  testing_status: Regression tests added; production threshold calibration required
+  last_threshold_change: Initial governed catalogue migration
+  enabled: true
+
+rule_catalog:
+  - <<: *rule_defaults
+    code: CARD_APPROVED_VELOCITY
+    name: Same card approved velocity
+    family: Velocity
+    group: Velocity
+    purpose: Detect concentrated successful use of one payment instrument.
+    risk_scenario_detected: Card compromise, payment cycling or high-frequency misuse.
+    applicable_entity: Card within MID and card brand
+    required_data_fields: [transaction_date, status, card_number, mid, brand]
+    baseline_method: Static threshold with plan, merchant, MID and temporary overrides
+    threshold_logic: Approved count exceeds the effective limit.
+    time_window: Effective card approved window in hours
+    aggregation_key: mid + brand + card_hash
+    risk_weight: 45
+    severity: High
+    alert_message: Card approved velocity exceeded.
+    recommended_analyst_action: Review linked approvals, identities, merchants and transaction purpose.
+
+  - <<: *rule_defaults
+    code: CARD_DECLINE_VELOCITY
+    name: Same card declined velocity
+    family: Decline behaviour
+    group: Velocity
+    purpose: Detect concentrated failed attempts on one payment instrument.
+    risk_scenario_detected: Card testing, credential compromise or repeated authorization probing.
+    applicable_entity: Card within MID and card brand
+    required_data_fields: [transaction_date, status, card_number, mid, brand]
+    threshold_logic: Decline count exceeds the effective limit.
+    time_window: Effective card decline window in hours
+    aggregation_key: mid + brand + card_hash
+    risk_weight: 45
+    severity: High
+    alert_message: Card decline velocity exceeded.
+    false_positive_controls: Exclude known gateway retries and review decline reasons.
+
+  - <<: *rule_defaults
+    code: MERCHANT_DAILY_VOLUME
+    name: MID and brand daily approved volume breach
+    family: MID behaviour
+    group: Merchant
+    purpose: Detect approved volume above the configured operating threshold.
+    risk_scenario_detected: Unapproved processing growth, traffic redirection or control evasion.
+    applicable_entity: Merchant, MID and card brand
+    required_data_fields: [transaction_date, status, amount, merchant, mid, brand]
+    threshold_logic: Daily approved volume exceeds the effective static threshold.
+    time_window: Calendar day
+    aggregation_key: merchant + mid + brand + day
+    risk_weight: 70
+    severity: Critical
+    alert_message: Daily approved volume exceeded the configured threshold.
+    false_positive_risks: Planned campaigns, seasonality, settlement batching and merchant growth.
+    false_positive_controls: Merchant/MID thresholds, planned-event exclusions and simulation.
+
+  - <<: *rule_defaults
+    code: PAYER_COUNTRY_GEOIP_MISMATCH
+    name: Payer country versus GeoIP mismatch
+    family: Geography
+    group: Geo
+    purpose: Detect inconsistent declared and observed countries.
+    risk_scenario_detected: Account takeover, identity misrepresentation or location masking.
+    applicable_entity: Customer identity
+    required_data_fields: [payer_country, geoip_country]
+    threshold_logic: Normalized payer and GeoIP countries differ.
+    aggregation_key: payer_email or payer_phone
+    risk_weight: 25
+    severity: Medium
+    alert_message: Declared and observed countries differ.
+    false_positive_risks: Travel, roaming, corporate networks and VPN use.
+    false_positive_controls: Country normalization and review alongside velocity or identity indicators.
+
+  - <<: *rule_defaults
+    code: HIGH_RISK_COUNTRY
+    name: High-risk country match
+    family: Geography
+    group: Geo
+    purpose: Identify transactions linked to configured higher-risk jurisdictions.
+    risk_scenario_detected: Elevated geographic exposure requiring risk-based review.
+    applicable_entity: Transaction and customer identity
+    required_data_fields: [payer_country, geoip_country]
+    threshold_logic: Payer or GeoIP country is in the configured list.
+    aggregation_key: transaction_id
+    risk_weight: 45
+    severity: High
+    alert_message: Configured high-risk country matched.
+    rule_dependencies: [Governed high-risk-country list]
+
+  - <<: *rule_defaults
+    code: EMAIL_USED_WITH_MULTIPLE_CARDS
+    name: Email used with multiple cards
+    family: Customer identity
+    group: Identity Linkage
+    purpose: Detect one normalized email linked to an unusual number of cards.
+    risk_scenario_detected: Synthetic identity, account takeover, mule activity or shared credentials.
+    applicable_entity: Email within merchant
+    required_data_fields: [payer_email, card_number, merchant]
+    threshold_logic: Unique card count exceeds the configured limit.
+    aggregation_key: merchant + normalized_email
+    risk_weight: 45
+    severity: High
+    alert_message: Email is linked to multiple cards.
+    false_positive_risks: Family accounts, corporate travel and payment aggregators.
+
+  - <<: *rule_defaults
+    code: PHONE_USED_WITH_MULTIPLE_CARDS
+    name: Phone used with multiple cards
+    family: Customer identity
+    group: Identity Linkage
+    purpose: Detect one normalized phone number linked to an unusual number of cards.
+    risk_scenario_detected: Synthetic identity, account takeover, mule activity or shared contact data.
+    applicable_entity: Phone within merchant
+    required_data_fields: [payer_phone, card_number, merchant]
+    threshold_logic: Unique card count exceeds the configured limit.
+    aggregation_key: merchant + normalized_phone
+    risk_weight: 45
+    severity: High
+    alert_message: Phone is linked to multiple cards.
+    false_positive_risks: Family accounts, corporate booking desks and recycled phone numbers.
+
+  - <<: *rule_defaults
+    code: REPEATED_CARD_AMOUNT
+    name: Same card and amount repeated rapidly
+    family: Structuring
+    group: Pattern
+    purpose: Detect rapid reuse of one card for the exact amount.
+    risk_scenario_detected: Automated retries, transaction splitting, card testing or threshold probing.
+    applicable_entity: Card within merchant
+    required_data_fields: [transaction_date, amount, card_number, merchant]
+    threshold_logic: Same card and exact amount occur more than once.
+    time_window: Configured repeated-amount window in minutes
+    aggregation_key: merchant + card_hash + amount
+    risk_weight: 25
+    severity: Medium
+    alert_message: Card and amount repeated within a short period.
+    false_positive_controls: Review retry codes, statuses and idempotency behaviour.
+
+  - <<: *rule_defaults
+    code: WATCHLIST_EMAIL
+    name: Email watchlist match
+    family: Watchlist intelligence
+    group: Watchlist
+    purpose: Detect an exact normalized email match against the internal watchlist.
+    risk_scenario_detected: Activity linked to a previously identified risky email.
+    applicable_entity: Email
+    required_data_fields: [payer_email]
+    threshold_logic: Exact normalized match.
+    aggregation_key: normalized_email
+    risk_weight: 70
+    severity: Critical
+    alert_message: Email matched the internal watchlist.
+    rule_dependencies: [Governed internal email watchlist]
+
+  - <<: *rule_defaults
+    code: WATCHLIST_PHONE
+    name: Phone watchlist match
+    family: Watchlist intelligence
+    group: Watchlist
+    purpose: Detect an exact normalized phone match against the internal watchlist.
+    risk_scenario_detected: Activity linked to a previously identified risky phone.
+    applicable_entity: Phone
+    required_data_fields: [payer_phone]
+    threshold_logic: Exact normalized match.
+    aggregation_key: normalized_phone
+    risk_weight: 70
+    severity: Critical
+    alert_message: Phone matched the internal watchlist.
+    rule_dependencies: [Governed internal phone watchlist]
+
+  - <<: *rule_defaults
+    code: WATCHLIST_CARD
+    name: Card watchlist match
+    family: Watchlist intelligence
+    group: Watchlist
+    purpose: Detect an exact card match against the internal watchlist.
+    risk_scenario_detected: Activity linked to a previously identified risky payment instrument.
+    applicable_entity: Card
+    required_data_fields: [card_number]
+    threshold_logic: Exact match; evidence returns only masked card and token.
+    aggregation_key: card_hash
+    risk_weight: 70
+    severity: Critical
+    alert_message: Card matched the internal watchlist.
+    rule_dependencies: [Governed internal card watchlist]
+
+  - <<: *rule_defaults
+    code: WATCHLIST_BIN
+    name: BIN watchlist match
+    family: Watchlist intelligence
+    group: Watchlist
+    purpose: Detect a card BIN present on the configured watchlist.
+    risk_scenario_detected: Exposure to a monitored issuing range.
+    applicable_entity: Card BIN
+    required_data_fields: [card_number]
+    threshold_logic: First six digits match a configured BIN.
+    aggregation_key: card_bin
+    risk_weight: 45
+    severity: High
+    alert_message: Card BIN matched the internal watchlist.
+    false_positive_risks: BIN-level matches affect many unrelated legitimate cards.
+    false_positive_controls: Corroborate with transaction, issuer, merchant and identity indicators.
+
+  - <<: *rule_defaults
+    code: CARD_USED_ACROSS_MERCHANTS
+    name: Card used across an abnormal number of merchants
+    family: Cross-merchant linkage
+    group: Identity Linkage
+    purpose: Detect one payment instrument appearing across multiple merchants.
+    risk_scenario_detected: Card compromise, collusive processing or transaction laundering linkage.
+    applicable_entity: Card across portfolio
+    required_data_fields: [card_number, merchant]
+    threshold_logic: Unique merchant count meets or exceeds the configured limit.
+    aggregation_key: card_hash
+    risk_weight: 45
+    severity: High
+    alert_message: Card appeared across multiple merchants.
+    false_positive_risks: Common wallets, travel cards and merchants under shared ownership.
+    false_positive_controls: Related-merchant exclusions and entity-aware threshold simulation.
+
+  - <<: *rule_defaults
+    code: DECLINE_THEN_APPROVAL
+    name: Approval following concentrated declines
+    family: Decline behaviour
+    group: Velocity
+    purpose: Detect an approval after repeated failures on the same card.
+    risk_scenario_detected: Card testing followed by successful authorization or control evasion.
+    applicable_entity: Card within MID
+    required_data_fields: [transaction_date, status, card_number, mid]
+    threshold_logic: Successful transaction occurs after the configured number of declines in-window.
+    time_window: Effective card decline window in hours
+    aggregation_key: card_hash
+    risk_weight: 45
+    severity: High
+    alert_message: Approval followed a concentrated decline burst.
+    rule_dependencies: [CARD_DECLINE_VELOCITY evidence]
+
+  - <<: *rule_defaults
+    code: MERCHANT_VOLUME_BASELINE_SPIKE
+    name: Merchant or MID approved-volume baseline spike
+    family: Merchant behaviour
+    group: Merchant
+    purpose: Detect material deviation from trailing approved daily volume.
+    risk_scenario_detected: Sudden processing change, traffic redirection or laundering activity.
+    applicable_entity: Merchant and MID
+    required_data_fields: [transaction_date, status, amount, merchant, mid]
+    baseline_method: Trailing 30-day average after minimum historical eligibility
+    threshold_logic: Current daily approved volume exceeds baseline by the configured multiplier.
+    time_window: Calendar day versus trailing lookback
+    aggregation_key: merchant + mid
+    risk_weight: 45
+    severity: High
+    alert_message: Approved volume materially exceeded its recent baseline.
+    false_positive_risks: Seasonality, promotions, onboarding growth and settlement timing.
+
+  - <<: *rule_defaults
+    code: MERCHANT_APPROVAL_RATE_DROP
+    name: Merchant or MID approval-rate deterioration
+    family: Decline behaviour
+    group: Merchant
+    purpose: Detect a material fall in approval rate versus recent behaviour.
+    risk_scenario_detected: Attack traffic, card testing, routing problems or low-quality acquisition.
+    applicable_entity: Merchant and MID
+    required_data_fields: [transaction_date, status, merchant, mid]
+    baseline_method: Trailing 30-day average after minimum historical eligibility
+    threshold_logic: Current approval rate falls by the configured percentage-point delta.
+    time_window: Calendar day versus trailing lookback
+    aggregation_key: merchant + mid
+    risk_weight: 25
+    severity: Medium
+    alert_message: Approval rate materially declined from baseline.
+    false_positive_controls: Minimum daily volume, decline-reason review and planned-change exclusions.
+
+  - <<: *rule_defaults
+    code: MERCHANT_REFUND_RATE_SPIKE
+    name: Merchant or MID refund-rate baseline spike
+    family: Refund and reversal abuse
+    group: Merchant
+    purpose: Detect a material increase in refund or reversal frequency.
+    risk_scenario_detected: Refund abuse, merchant fulfilment issues or suspicious fund movement.
+    applicable_entity: Merchant and MID
+    required_data_fields: [transaction_date, type, merchant, mid]
+    baseline_method: Trailing 30-day average after minimum historical eligibility
+    threshold_logic: Current refund/reversal rate exceeds the trailing baseline multiplier.
+    time_window: Calendar day versus trailing lookback
+    aggregation_key: merchant + mid
+    risk_weight: 45
+    severity: High
+    alert_message: Refund or reversal rate materially exceeded baseline.
+    data_quality_dependencies: Transaction type must reliably identify refunds and reversals; original-transaction linkage is a future-data requirement.
+
+  - <<: *rule_defaults
+    code: DORMANT_MID_RESUMPTION
+    name: Dormant MID resumed activity
+    family: Dormancy and sudden spikes
+    group: Merchant
+    purpose: Detect renewed MID activity following a long observed inactivity period.
+    risk_scenario_detected: Unauthorized MID reactivation, account compromise or sudden business-model change.
+    applicable_entity: MID
+    required_data_fields: [transaction_date, mid]
+    baseline_method: Observed inactivity gap
+    threshold_logic: Days since prior observed MID transaction meet or exceed the configured threshold.
+    time_window: Configured dormancy period
+    aggregation_key: mid
+    risk_weight: 45
+    severity: High
+    alert_message: MID resumed after a dormant period.
+    data_quality_dependencies: Uploaded history must span the dormancy threshold; MID activation status is a future-data requirement.
